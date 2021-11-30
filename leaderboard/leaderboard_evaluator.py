@@ -78,8 +78,6 @@ class LeaderboardEvaluator(object):
             self.client_timeout = args.timeout
         self.client.set_timeout(self.client_timeout)
 
-        self.traffic_manager = self.client.get_trafficmanager(args.traffic_manager_port)
-
         dist = pkg_resources.get_distribution("carla")
         if dist.version != 'leaderboard':
             if LooseVersion(dist.version) < LooseVersion('0.9.10'):
@@ -134,7 +132,7 @@ class LeaderboardEvaluator(object):
             settings.synchronous_mode = False
             settings.fixed_delta_seconds = None
             self.world.apply_settings(settings)
-            self.traffic_manager.set_synchronous_mode(False)
+            self.traffic_manager.shut_down()
 
         if self.manager:
             self.manager.cleanup()
@@ -204,15 +202,16 @@ class LeaderboardEvaluator(object):
         settings.synchronous_mode = True
         self.world.apply_settings(settings)
 
-        self.world.reset_all_traffic_lights()
-
         CarlaDataProvider.set_client(self.client)
         CarlaDataProvider.set_world(self.world)
         CarlaDataProvider.set_traffic_manager_port(args.traffic_manager_port)
 
+        #self.client.reload_world(False)
+        # self.world = self.client.get_world()
+        self.traffic_manager = self.client.get_trafficmanager(args.traffic_manager_port)
         self.traffic_manager.set_synchronous_mode(True)
-        self.traffic_manager.set_random_device_seed(args.traffic_manager_seed)
         self.traffic_manager.set_hybrid_physics_mode(True)
+        self.traffic_manager.set_random_device_seed(args.traffic_manager_seed)
 
         # Wait for the world to be ready
         if CarlaDataProvider.is_sync_mode():
